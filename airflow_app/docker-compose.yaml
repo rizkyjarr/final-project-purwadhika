@@ -13,7 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   airflow-webserver:
-    image: apache/airflow:2.7.1
+    image: apache/airflow:latest
     container_name: airflow-webserver
     restart: always
     depends_on:
@@ -23,6 +23,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__CORE__TEST_CONNECTION: 'Enabled'
       
     ports:
       - "8080:8080"
@@ -30,10 +31,11 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
+      - ./dags/include/sql:/opt/airflow/dags/include/sql
     command: webserver
 
   airflow-scheduler:
-    image: apache/airflow:2.7.1
+    image: apache/airflow:latest
     container_name: airflow-scheduler
     restart: always
     depends_on:
@@ -42,14 +44,16 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__CORE__TEST_CONNECTION: 'Enabled'
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
+      - ./dags/include/sql:/opt/airflow/dags/include/sql
     command: scheduler
 
   airflow-init:
-    image: apache/airflow:2.7.1
+    image: apache/airflow:latest
     container_name: airflow-init
     depends_on:
       - postgres
@@ -57,11 +61,14 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__CORE__TEST_CONNECTION: 'Enabled'
       
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
+      - ./dags/include/sql:/opt/airflow/dags/include/sql
+      
     command: bash -c "airflow db upgrade && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
 
 volumes:
