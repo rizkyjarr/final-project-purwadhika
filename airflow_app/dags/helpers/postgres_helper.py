@@ -57,6 +57,7 @@ def execute_sql_file(sql_file_path, table_name):
         print(f"SQL file executed and {table_name} table has been created")
     except Exception as e:
         print(f"Error executing SQL File: {e}")
+        raise Exception(f"SQL execution failed: {e}")
     finally:
         if cur:
             cur.close()
