@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS vehicle (
     driver_id INT REFERENCES driver(driver_id),
     vehicle_type TEXT NOT NULL,
     license_plate TEXT NOT NULL UNIQUE,
-    year INT,
+    year TEXT,
     brand TEXT,
     created_at TIMESTAMP NOT NULL    
 );
