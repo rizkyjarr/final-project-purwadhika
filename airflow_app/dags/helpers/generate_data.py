@@ -24,14 +24,11 @@ DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
     "port": os.getenv("DB_PORT")
 }
-
 conn = psycopg2.connect(**DB_CONFIG)
 cursor = conn.cursor()
 
-
 # Declare function for generating dummy data
 fake = Faker()
-
 
 # Create function for generating customer
 def generate_customer():
@@ -156,20 +153,20 @@ def insert_data(table_name,data):
         conn.close()
 
 # Try function
-# def main():
-#     customer = generate_customer()
-#     insert_data("customer", customer
-#                 )
-#     driver = generate_driver()
-#     insert_data("driver", driver)
+def main():
+    customer = generate_customer()
+    insert_data("customer", customer
+                )
+    driver = generate_driver()
+    insert_data("driver", driver)
     
-#     vehicle = generate_vehicle()
-#     insert_data("vehicle", vehicle)
+    vehicle = generate_vehicle()
+    insert_data("vehicle", vehicle)
 
-#     ride = generate_ride()
-#     insert_data("ride", ride)
-#     # latest_id = fetch_latest_driver_id()
-#     # print(latest_id)
+    ride = generate_ride()
+    insert_data("ride", ride)
+    # latest_id = fetch_latest_driver_id()
+    # print(latest_id)
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
