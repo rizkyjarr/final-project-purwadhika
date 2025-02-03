@@ -33,7 +33,8 @@ with DAG(
     schedule_interval="@daily",  # Runs daily; adjust as needed
     catchup=False
 ) as dag:
-    previous_task = None
+    
+    prev_task_group = None
     # Create a task for each SQL file
     for sql_file in sql_files:
         table_name = sql_file.replace("create_", "").replace(".sql", "")  # Extract table name
@@ -49,19 +50,29 @@ with DAG(
                 depends_on_past=True
             )
 
-            create_table_task
+            generate_func = getattr(data_gen, f"generate_{table_name}", None)  # Get the function dynamically
 
-            # # **Step 2: Generate & Insert Data**
-            # generate_func = getattr(data_gen, f"generate_{table_name}", None)  # Get the function dynamically
+            if generate_func:  # Only proceed if function exists
 
-            # if generate_func:  # Only proceed if function exists
+                @task(task_id=f"generate_and_insert_{table_name}")
+                def generate_and_insert_data(table):
+                    data = getattr(data_gen, f"generate_{table}")()  #dynamically get function
+                    data_gen.insert_data(table, data)  # Insert into DB
 
-            #     @task(task_id=f"generate_and_insert_{table_name}")
-            #     def generate_and_insert_data():
-            #         data = generate_func()  # Generate **only one** record
-            #         data_gen.insert_data(table_name, data)  # Insert into DB
+                insert_task = generate_and_insert_data(table_name)
 
-            #     insert_task = generate_and_insert_data()
+
+                create_table_task >> insert_task
+        
+        if prev_task_group:
+            prev_task_group >> table_group 
+
+        prev_task_group = table_group
+
+        
+
+            # **Step 2: Generate & Insert Data**
+            
 
             #     # Set the dependency within the TaskGroup
             #     create_table_task >> insert_task

@@ -80,23 +80,23 @@ def execute_sql_file(sql_file_path, table_name):
 #             sql_file_path = os.path.join(SQL_FOLDER, sql_file)
 #             execute_sql_file(sql_file_path,table_name)
 
-customer_path = r"C:\Users\user\OneDrive\RFA _Personal Files\02. COURSE\Purwadhika_Data Engineering\Purwadhika_VS\final_project\airflow_app\dags\sql\create_customer.sql"
-driver_path = r"C:\Users\user\OneDrive\RFA _Personal Files\02. COURSE\Purwadhika_Data Engineering\Purwadhika_VS\final_project\airflow_app\dags\sql\create_driver.sql"
-vehicle_path = r"C:\Users\user\OneDrive\RFA _Personal Files\02. COURSE\Purwadhika_Data Engineering\Purwadhika_VS\final_project\airflow_app\dags\sql\create_vehicle.sql"
-ride_path = r"C:\Users\user\OneDrive\RFA _Personal Files\02. COURSE\Purwadhika_Data Engineering\Purwadhika_VS\final_project\airflow_app\dags\sql\create_ride.sql"
+# customer_path = r"C:\Users\user\OneDrive\RFA _Personal Files\02. COURSE\Purwadhika_Data Engineering\Purwadhika_VS\final_project\airflow_app\dags\sql\create_customer.sql"
+# driver_path = r"C:\Users\user\OneDrive\RFA _Personal Files\02. COURSE\Purwadhika_Data Engineering\Purwadhika_VS\final_project\airflow_app\dags\sql\create_driver.sql"
+# vehicle_path = r"C:\Users\user\OneDrive\RFA _Personal Files\02. COURSE\Purwadhika_Data Engineering\Purwadhika_VS\final_project\airflow_app\dags\sql\create_vehicle.sql"
+# ride_path = r"C:\Users\user\OneDrive\RFA _Personal Files\02. COURSE\Purwadhika_Data Engineering\Purwadhika_VS\final_project\airflow_app\dags\sql\create_ride.sql"
     
-def main():
-    table_exists("customer")
-    execute_sql_file(customer_path, "customer")
+# def main():
+#     table_exists("customer")
+#     execute_sql_file(customer_path, "customer")
 
-    table_exists("driver")
-    execute_sql_file(driver_path,"driver")
+#     table_exists("driver")
+#     execute_sql_file(driver_path,"driver")
 
-    table_exists("vehicle")
-    execute_sql_file(vehicle_path,"vehicle")
+#     table_exists("vehicle")
+#     execute_sql_file(vehicle_path,"vehicle")
 
-    table_exists("ride")
-    execute_sql_file(ride_path,"ride")
+#     table_exists("ride")
+#     execute_sql_file(ride_path,"ride")
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
