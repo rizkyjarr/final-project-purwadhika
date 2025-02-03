@@ -75,15 +75,21 @@ def fetch_latest_driver_id():
 
 def generate_vehicle():        
         latest_driver_id = fetch_latest_driver_id()
-        vehicle = {
-             "driver_id": latest_driver_id,
-            "vehicle_type": random.choice(["Car", "Motorcycle"]),
-            "license_plate": generate_license_plate(),
-            "year": random.choice(["2019", "2020", "2021", "2022", "2023", "2024", "2025"]),
-            "brand": random.choice(["Honda", "Toyota", "Suzuki", "Mitsubishi", "Hyundai", "Kawasaki"]),
-            "created_at": created_at_str
-            }
-        return vehicle
+
+        if latest_driver_id is None:  # ✅ Prevent inserting when no driver exists
+            print("🚨 No driver found! Skipping vehicle generation.")
+            return None
+
+        else:   
+            vehicle = {
+                "driver_id": latest_driver_id,
+                "vehicle_type": random.choice(["Car", "Motorcycle"]),
+                "license_plate": generate_license_plate(),
+                "year": random.choice(["2019", "2020", "2021", "2022", "2023", "2024", "2025"]),
+                "brand": random.choice(["Honda", "Toyota", "Suzuki", "Mitsubishi", "Hyundai", "Kawasaki"]),
+                "created_at": created_at_str
+                }
+            return vehicle
 
 def fetch_cust_id():
     cursor.execute("SELECT cust_id FROM customer")

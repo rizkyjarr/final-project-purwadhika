@@ -31,8 +31,10 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./dags/sql:/opt/airflow/dags/sql
-    command: webserver
+       - ./dags/sql:/opt/airflow/dags/sql
+      - ./dags/helpers:/opt/airflow/dags/helpers
+      - ./requirements.txt:/requirements.txt
+    command: bash -c "pip install -r /requirements.txt && airflow db upgrade && airflow webserver"
 
   airflow-scheduler:
     image: apache/airflow:latest
@@ -49,8 +51,10 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./dags/sql:/opt/airflow/dags/sql
-    command: scheduler
+       - ./dags/sql:/opt/airflow/dags/sql
+      - ./dags/helpers:/opt/airflow/dags/helpers
+      - ./requirements.txt:/requirements.txt
+    command: bash -c "pip install -r /requirements.txt && airflow scheduler"
 
   airflow-init:
     image: apache/airflow:latest
@@ -67,9 +71,11 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./dags/sql:/opt/airflow/dags/sql
+       - ./dags/sql:/opt/airflow/dags/sql
+      - ./dags/helpers:/opt/airflow/dags/helpers
+      - ./requirements.txt:/requirements.txt
       
-    command: bash -c "airflow db upgrade && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
+    command: bash -c "pip install -r /requirements.txt && airflow db upgrade && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
 
 volumes:
   postgres_data:
