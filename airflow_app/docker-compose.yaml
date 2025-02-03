@@ -31,7 +31,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./dags/include/sql:/opt/airflow/dags/include/sql
+      - ./dags/sql:/opt/airflow/dags/sql
     command: webserver
 
   airflow-scheduler:
@@ -49,7 +49,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./dags/include/sql:/opt/airflow/dags/include/sql
+      - ./dags/sql:/opt/airflow/dags/sql
     command: scheduler
 
   airflow-init:
@@ -67,7 +67,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./dags/include/sql:/opt/airflow/dags/include/sql
+      - ./dags/sql:/opt/airflow/dags/sql
       
     command: bash -c "airflow db upgrade && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
 
