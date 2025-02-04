@@ -47,7 +47,7 @@ with DAG(
                 task_id=f"check_if_{table_name}_exists",
                 python_callable=execute_sql_file,
                 op_args=[sql_file_path, table_name],
-                depends_on_past=True
+                
             )
 
             generate_func = getattr(data_gen, f"generate_{table_name}", None)  # Get the function dynamically
