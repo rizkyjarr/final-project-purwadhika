@@ -39,7 +39,7 @@ def extract_incremental_data_postgre(table_name, incremental_column=None):
     
     #fetch table that has created_at column/incremental_volume
     if incremental_column:
-        target_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        target_date = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
         query = f"""
 
             SELECT * FROM {table_name}
@@ -144,49 +144,62 @@ def ensure_table_exist(table_name, partition_field):
     
     schema = get_postgres_schema(table_name)
     create_bigquery_table(table_name, schema,partition_field)
-
+    
 def upsert_to_bigquery(df, table_name, primary_key):
-    """Upsert DataFrame directly into BigQuery using MERGE without a staging table."""
+    """Upsert DataFrame into BigQuery using a staging table for efficiency."""
     dataset_ref = f"{BQ_PROJECT}.{BQ_DATASET}"
-    target_table = f"{dataset_ref}.{table_name}"
+    target_table = f"{dataset_ref}.production_hailing_{table_name}_source"
+    staging_table = f"{dataset_ref}.staging_{table_name}"
 
     if df.empty:
-        print(f"⚠️ No new data for {table_name}, but checking for previous updates...")
-        check_query = f"SELECT COUNT(*) FROM `{target_table}`"
-        result = client.query(check_query).result()
-        row_count = list(result)[0][0]
+        print(f"⚠️ No new data for {table_name}. Skipping upsert.")
+        return
 
-        if row_count == 0:
-            print(f"⚠️ No existing data in BigQuery for {table_name}. Skipping upsert.")
-            return  # Skip if BigQuery table is empty
+    job_config = bigquery.LoadJobConfig(
+        write_disposition="WRITE_TRUNCATE"  # ✅ Overwrite staging table each time
+    )
 
-    # Convert DataFrame to list of rows
-    rows = df.values.tolist()
-    columns = ", ".join(df.columns)
+    job = client.load_table_from_dataframe(df, staging_table, job_config=job_config)
+    job.result()  # ✅ Wait for the job to complete
+    print(f"✅ Loaded {len(df)} rows into staging table: {staging_table}")
 
-    values_list = []
-    for row in rows:
-        formatted_row = ", ".join([f"'{str(value)}'" if isinstance(value, str) else str(value) for value in row])
-        values_list.append(f"({formatted_row})")
+    # ✅ Define columns that need explicit CAST
+    float_to_numeric_columns = {"distance_km", "fare"}  # ✅ Add other affected NUMERIC columns
+    datetime_to_timestamp_columns = {"start_time", "end_time", "created_at", "updated_at"}  # ✅ Add TIMESTAMP columns
 
-    values_clause = ",\n".join(values_list) if values_list else "SELECT NULL AS " + ", NULL AS ".join(df.columns)
-
-    # Construct the MERGE query
     merge_query = f"""
     MERGE `{target_table}` AS target
-    USING (SELECT * FROM ({values_clause})) AS source ({columns})
+    USING `{staging_table}` AS source
     ON target.{primary_key} = source.{primary_key}
     WHEN MATCHED THEN
-        UPDATE SET {", ".join([f"target.{col} = source.{col}" for col in df.columns if col != primary_key])}
+        UPDATE SET 
+        {", ".join([
+            f"target.{col} = CAST(source.{col} AS NUMERIC)" if col in float_to_numeric_columns else
+            f"target.{col} = CAST(source.{col} AS TIMESTAMP)" if col in datetime_to_timestamp_columns else
+            f"target.{col} = source.{col}" 
+            for col in df.columns if col != primary_key
+        ])}
     WHEN NOT MATCHED THEN
-        INSERT ({columns})
-        VALUES ({", ".join(["source." + col for col in df.columns])})
+        INSERT ({", ".join(df.columns)})
+        VALUES ({", ".join([
+            f"CAST(source.{col} AS NUMERIC)" if col in float_to_numeric_columns else
+            f"CAST(source.{col} AS TIMESTAMP)" if col in datetime_to_timestamp_columns else
+            f"source.{col}" 
+            for col in df.columns
+        ])})
     """
 
-    # Execute the query
     query_job = client.query(merge_query)
-    query_job.result()  # Wait for completion
+    query_job.result()  # ✅ Wait for the MERGE to complete
     print(f"✅ Merged {len(df)} rows into {table_name}")
+
+    # Step 3️⃣: Drop Staging Table to Clean Up
+    drop_query = f"DROP TABLE `{staging_table}`"
+    client.query(drop_query).result()
+    print(f"🗑️ Dropped staging table: {staging_table}")
+
+
+
 
 # SECTION X - THIS IS FOR MANUAL TESTING!
 # def main():
