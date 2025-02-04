@@ -1,0 +1,18 @@
+postgre_tables:
+  - name: customer
+    primary_key: cust_id
+    incremental_column: created_at
+
+  - name: driver
+    primary_key: driver_id
+    incremental_column: created_at
+
+  - name: vehicle
+    primary_key: vehicle_id
+    incremental_column: created_at
+
+  - name: ride
+    primary_key: ride_id
+    incremental_column: created_at
+
+   
