@@ -6,3 +6,4 @@ airflow_app/dags/helpers/__pycache__/
 airflow_app/dags/helpers/.env
 postgresql_app/postgresql_app/
 finalproject_rizkyfajaraditya.pptx
+airflow_app/credentials.json
