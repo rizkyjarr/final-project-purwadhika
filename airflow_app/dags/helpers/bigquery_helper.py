@@ -30,7 +30,11 @@ BQ_PROJECT = os.getenv("BQ_PROJECT")
 BQ_DATASET = os.getenv("BQ_DATASET")
 
 # Open .yaml file for tables configuration
-with open("postgre_tables.yaml", "r") as file:
+
+# with open("postgre_tables.yaml", "r") as file:
+#     config = yaml.safe_load(file)
+
+with open("/opt/airflow/dags/helpers/postgre_tables.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 # extract incremental data from tables in postgre that has been configurated in tables.yaml
@@ -39,7 +43,7 @@ def extract_incremental_data_postgre(table_name, incremental_column=None):
     
     #fetch table that has created_at column/incremental_volume
     if incremental_column:
-        target_date = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
+        target_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
         query = f"""
 
             SELECT * FROM {table_name}
@@ -166,6 +170,7 @@ def upsert_to_bigquery(df, table_name, primary_key):
     # ✅ Define columns that need explicit CAST
     float_to_numeric_columns = {"distance_km", "fare"}  # ✅ Add other affected NUMERIC columns
     datetime_to_timestamp_columns = {"start_time", "end_time", "created_at", "updated_at"}  # ✅ Add TIMESTAMP columns
+    string_columns = {"year"}  # ✅ Columns that must be STRING
 
     merge_query = f"""
     MERGE `{target_table}` AS target
@@ -176,6 +181,7 @@ def upsert_to_bigquery(df, table_name, primary_key):
         {", ".join([
             f"target.{col} = CAST(source.{col} AS NUMERIC)" if col in float_to_numeric_columns else
             f"target.{col} = CAST(source.{col} AS TIMESTAMP)" if col in datetime_to_timestamp_columns else
+            f"target.{col} = CAST(source.{col} AS STRING)" if col in string_columns else
             f"target.{col} = source.{col}" 
             for col in df.columns if col != primary_key
         ])}
@@ -184,6 +190,7 @@ def upsert_to_bigquery(df, table_name, primary_key):
         VALUES ({", ".join([
             f"CAST(source.{col} AS NUMERIC)" if col in float_to_numeric_columns else
             f"CAST(source.{col} AS TIMESTAMP)" if col in datetime_to_timestamp_columns else
+            f"CAST(source.{col} AS STRING)" if col in string_columns else
             f"source.{col}" 
             for col in df.columns
         ])})
@@ -191,7 +198,7 @@ def upsert_to_bigquery(df, table_name, primary_key):
 
     query_job = client.query(merge_query)
     query_job.result()  # ✅ Wait for the MERGE to complete
-    print(f"✅ Merged {len(df)} rows into {table_name}")
+    print(f"✅ Merged {len(df)} rows into {target_table}")
 
     # Step 3️⃣: Drop Staging Table to Clean Up
     drop_query = f"DROP TABLE `{staging_table}`"
@@ -225,16 +232,17 @@ def upsert_to_bigquery(df, table_name, primary_key):
 
 
 # SECTION 2 - CHECK FOR ENSURING TABLE TASK
-def main():
-    for table in config["postgre_tables"]:
-        table_name = table["name"]
-        partition_field = table["partition_field"]
-        primary_key = table["primary_key"]
-        incremental_column = table['incremental_column']
+# def main():
+#     for table in config["postgre_tables"]:
+#         table_name = table["name"]
+#         partition_field = table["partition_field"]
+#         primary_key = table["primary_key"]
+#         incremental_column = table['incremental_column']
         
-        df = extract_incremental_data_postgre(table_name,incremental_column)
-        ensure_table_exist(table_name, partition_field)
-        upsert_to_bigquery(df, table_name,primary_key)
-if __name__ == "__main__":
-    main()
+        
+#         ensure_table_exist(table_name, partition_field)
+#         df = extract_incremental_data_postgre(table_name,incremental_column)
+#         upsert_to_bigquery(df, table_name,primary_key)
+# if __name__ == "__main__":
+#     main()
 
