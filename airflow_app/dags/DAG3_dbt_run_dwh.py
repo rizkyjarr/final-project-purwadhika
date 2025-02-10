@@ -1,11 +1,14 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from datetime import datetime
+from helpers.send_discord_alert import send_discord_alert
 
 default_args = {
     "owner": "airflow",
     "start_date": datetime(2024, 2, 10),
     "retries": 1,
+    "on_failure_callback": lambda context: send_discord_alert(context, "failure"),
+    "on_retry_callback": lambda context: send_discord_alert(context, "retry"),
 }
 
 with DAG(

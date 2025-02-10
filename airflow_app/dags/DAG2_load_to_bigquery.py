@@ -5,6 +5,7 @@ import yaml
 from airflow.utils.task_group import TaskGroup
 from helpers.bigquery_helper import extract_incremental_data_postgre,ensure_table_exist, upsert_to_bigquery
 import pandas as pd
+from helpers.send_discord_alert import send_discord_alert
 
 
 with open("/opt/airflow/dags/helpers/postgre_tables.yaml", "r") as file:
@@ -70,7 +71,9 @@ default_args = {
     "owner": "airflow",
     "start_date": datetime(2024, 2, 1),
     "retries": 5,
-    "retry_delay":timedelta(seconds=10)
+    "retry_delay":timedelta(seconds=10),
+    "on_failure_callback": lambda context: send_discord_alert(context, "failure"),
+    "on_retry_callback": lambda context: send_discord_alert(context, "retry"),
 }
 
 with DAG(

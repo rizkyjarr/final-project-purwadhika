@@ -6,6 +6,7 @@ from helpers.postgres_helper import execute_sql_file
 from airflow.utils.task_group import TaskGroup
 import helpers.generate_data as data_gen
 from airflow.decorators import task
+from helpers.send_discord_alert import send_discord_alert
 
 
 # ✅ The correct path inside the Airflow container
@@ -23,7 +24,9 @@ default_args = {
     "owner": "airflow",
     "start_date": datetime(2024, 2, 1),
     "retries": 5,
-    "retry_delay":timedelta(seconds=10)
+    "retry_delay":timedelta(seconds=10),
+    "on_failure_callback": lambda context: send_discord_alert(context, "failure"),  # ✅ Send failure alerts
+    "on_retry_callback": lambda context: send_discord_alert(context, "retry"),      # ✅ Send retry alerts
 }
 
 # Define the DAG
