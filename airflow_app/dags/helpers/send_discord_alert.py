@@ -11,23 +11,23 @@ def send_discord_alert(context, alert_type="failure"):
     exception = context.get('exception')
 
     if alert_type == "failure":
-        message = f"🚨 **Airflow Task Failed!** 🚨\n" \
-                  f"🔹 **DAG**: `{dag_id}`\n" \
-                  f"🔹 **Task**: `{task_id}`\n" \
-                  f"🔹 **Execution Date**: `{execution_date}`\n" \
-                  f"❌ **Error**: `{exception}`"
+        message = f"🚨 **Airflow Task Failed! Need actions immediately** 🚨\n" \
+                  f" **DAG**: `{dag_id}`\n" \
+                  f" **Task**: `{task_id}`\n" \
+                  f" **Execution Date**: `{execution_date}`\n" \
+                  f" **Error**: `{exception}`"
     elif alert_type == "retry":
         message = f"🔄 **Airflow Task Retrying!** 🔄\n" \
-                  f"🔹 **DAG**: `{dag_id}`\n" \
-                  f"🔹 **Task**: `{task_id}`\n" \
-                  f"🔹 **Execution Date**: `{execution_date}`\n" \
-                  f"🔄 **Retrying attempt**"
+                  f" **DAG**: `{dag_id}`\n" \
+                  f" **Task**: `{task_id}`\n" \
+                  f" **Execution Date**: `{execution_date}`\n" \
+                  f" **Retrying attempt**"
     elif alert_type == "success":
         message = f"✅ **Airflow Task Completed!** ✅\n" \
-                  f"🔹 **DAG**: `{dag_id}`\n" \
-                  f"🔹 **Task**: `{task_id}`\n" \
-                  f"🔹 **Execution Date**: `{execution_date}`\n" \
-                  f"🎉 **Success**"
+                  f" **DAG**: `{dag_id}`\n" \
+                  f" **Task**: `{task_id}`\n" \
+                  f" **Execution Date**: `{execution_date}`\n" \
+                  f" **Success**"
 
     payload = {"content": message}
     headers = {"Content-Type": "application/json"}
