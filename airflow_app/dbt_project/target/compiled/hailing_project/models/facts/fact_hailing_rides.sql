@@ -48,3 +48,8 @@ on ride_staging.cust_id = dim_customer.cust_id
 LEFT JOIN dim_driver
 on ride_staging.driver_id = dim_driver.driver_id
 
+
+    WHERE ride_staging.created_at > (
+        SELECT MAX(created_at)
+        FROM `purwadika`.`rizky_dwh_hailing_facts`.`fact_hailing_rides`
+    )

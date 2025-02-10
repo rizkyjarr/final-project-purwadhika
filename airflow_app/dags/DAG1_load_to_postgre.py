@@ -13,8 +13,8 @@ SQL_FOLDER = "/opt/airflow/dags/sql"
 
 # Ensure the directory exists before listing files
 if not os.path.exists(SQL_FOLDER):
-    print(f"🚨 WARNING: SQL directory does not exist: {SQL_FOLDER}")
-    sql_files = []  # Prevent breaking DAG
+    print(f" WARNING!!!: SQL directory does not exist: {SQL_FOLDER}")
+    sql_files = []  
 else:
     sql_files = sorted([f for f in os.listdir(SQL_FOLDER) if f.endswith(".sql")])
 
@@ -30,12 +30,13 @@ default_args = {
 with DAG(
     "DAG1_load_to_postgre",
     default_args=default_args,
-    schedule_interval="@daily",  # Runs daily; adjust as needed
-    catchup=False
+    schedule_interval="*/5 * * * *",  # Run task every 5 minutes
+    catchup=False,
+    max_active_runs=1,
 ) as dag:
     
     prev_task_group = None
-    # Create a task for each SQL file
+    # Create loop to listing every sql file within the SQL_FOLDER
     for sql_file in sql_files:
         table_name = sql_file.replace("create_", "").replace(".sql", "")  # Extract table name
         sql_file_path = os.path.join(SQL_FOLDER, sql_file)

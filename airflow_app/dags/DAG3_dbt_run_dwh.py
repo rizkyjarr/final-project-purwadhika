@@ -8,7 +8,14 @@ default_args = {
     "retries": 1,
 }
 
-with DAG("DAG3_dbt_run", default_args=default_args, schedule_interval="@daily", catchup=False) as dag:
+with DAG(
+    "DAG3_dbt_run", 
+    default_args=default_args, 
+    schedule_interval="10 10 * * *", 
+    catchup=False,
+    max_active_runs=1
+    
+    ) as dag:
 
     dbt_run_staging = BashOperator(
         task_id="dbt_run_staging_models",

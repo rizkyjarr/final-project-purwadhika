@@ -76,8 +76,9 @@ default_args = {
 with DAG(
     "DAG2_load_to_BigQuery",
     default_args=default_args,
-    schedule_interval="@daily",
-    catchup=False
+    schedule_interval="0 10 * * *", # update every 10 am WIB Jakarta
+    catchup=False,
+    max_active_runs=1,
 
 ) as dag:
     

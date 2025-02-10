@@ -1,15 +1,16 @@
-
+-- back compat for old kwarg name
   
+  
+        
+            
+            
+        
     
 
-    create or replace table `purwadika`.`rizky_dwh_hailing_facts`.`dim_driver`
-      
-    partition by timestamp_trunc(created_at, day)
     
 
-    OPTIONS()
-    as (
-      
+    merge into `purwadika`.`rizky_dwh_hailing_facts`.`dim_driver` as DBT_INTERNAL_DEST
+        using (
 
 
 WITH driver AS (
@@ -39,5 +40,25 @@ LEFT JOIN vehicle
 on driver.driver_id = vehicle.driver_id
 
 
-    );
-  
+    WHERE driver.created_at > (
+        SELECT MAX(created_at)
+        FROM `purwadika`.`rizky_dwh_hailing_facts`.`dim_driver`
+    )
+
+        ) as DBT_INTERNAL_SOURCE
+        on (
+                DBT_INTERNAL_SOURCE.driver_id = DBT_INTERNAL_DEST.driver_id
+            )
+
+    
+    when matched then update set
+        `driver_id` = DBT_INTERNAL_SOURCE.`driver_id`,`vehicle_id` = DBT_INTERNAL_SOURCE.`vehicle_id`,`driver_name` = DBT_INTERNAL_SOURCE.`driver_name`,`phone_number` = DBT_INTERNAL_SOURCE.`phone_number`,`email` = DBT_INTERNAL_SOURCE.`email`,`vehicle_type` = DBT_INTERNAL_SOURCE.`vehicle_type`,`vehicle_brand` = DBT_INTERNAL_SOURCE.`vehicle_brand`,`vehicle_production_year` = DBT_INTERNAL_SOURCE.`vehicle_production_year`,`license_plate` = DBT_INTERNAL_SOURCE.`license_plate`,`created_at` = DBT_INTERNAL_SOURCE.`created_at`
+    
+
+    when not matched then insert
+        (`driver_id`, `vehicle_id`, `driver_name`, `phone_number`, `email`, `vehicle_type`, `vehicle_brand`, `vehicle_production_year`, `license_plate`, `created_at`)
+    values
+        (`driver_id`, `vehicle_id`, `driver_name`, `phone_number`, `email`, `vehicle_type`, `vehicle_brand`, `vehicle_production_year`, `license_plate`, `created_at`)
+
+
+    

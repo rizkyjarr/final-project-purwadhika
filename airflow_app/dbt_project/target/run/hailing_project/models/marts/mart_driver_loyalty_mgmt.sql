@@ -1,15 +1,16 @@
-
+-- back compat for old kwarg name
   
+  
+        
+            
+            
+        
     
 
-    create or replace table `purwadika`.`rizky_dwh_hailing_marts`.`mart_driver_loyalty_mgmt`
-      
-    
     
 
-    OPTIONS()
-    as (
-      
+    merge into `purwadika`.`rizky_dwh_hailing_marts`.`mart_driver_loyalty_mgmt` as DBT_INTERNAL_DEST
+        using (
 
 WITH dim_driver AS(
     SELECT *
@@ -37,5 +38,20 @@ LEFT JOIN fact_rides
 ON dim_driver.driver_id = fact_rides.driver_id
 
 GROUP BY driver_id,driver_name,phone_number,email,vehicle_type
-    );
-  
+        ) as DBT_INTERNAL_SOURCE
+        on (
+                DBT_INTERNAL_SOURCE.driver_id = DBT_INTERNAL_DEST.driver_id
+            )
+
+    
+    when matched then update set
+        `driver_id` = DBT_INTERNAL_SOURCE.`driver_id`,`driver_name` = DBT_INTERNAL_SOURCE.`driver_name`,`phone_number` = DBT_INTERNAL_SOURCE.`phone_number`,`email` = DBT_INTERNAL_SOURCE.`email`,`vehicle_type` = DBT_INTERNAL_SOURCE.`vehicle_type`,`no_of_rides` = DBT_INTERNAL_SOURCE.`no_of_rides`,`total_ride_duration_min` = DBT_INTERNAL_SOURCE.`total_ride_duration_min`,`total_fare` = DBT_INTERNAL_SOURCE.`total_fare`,`total_distance_km` = DBT_INTERNAL_SOURCE.`total_distance_km`,`rev_opportunity_loss` = DBT_INTERNAL_SOURCE.`rev_opportunity_loss`
+    
+
+    when not matched then insert
+        (`driver_id`, `driver_name`, `phone_number`, `email`, `vehicle_type`, `no_of_rides`, `total_ride_duration_min`, `total_fare`, `total_distance_km`, `rev_opportunity_loss`)
+    values
+        (`driver_id`, `driver_name`, `phone_number`, `email`, `vehicle_type`, `no_of_rides`, `total_ride_duration_min`, `total_fare`, `total_distance_km`, `rev_opportunity_loss`)
+
+
+    
