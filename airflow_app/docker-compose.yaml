@@ -19,19 +19,19 @@ services:
     depends_on:
       - postgres
       - airflow-scheduler
+      - dbt-runner  # Ensure dbt service is running before Airflow starts
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW__CORE__TEST_CONNECTION: 'Enabled'
-      
     ports:
       - "8080:8080"
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-       - ./dags/sql:/opt/airflow/dags/sql
+      - ./dags/sql:/opt/airflow/dags/sql
       - ./dags/helpers:/opt/airflow/dags/helpers
       - ./requirements.txt:/requirements.txt
       - ./credentials.json:/credentials.json
@@ -44,6 +44,7 @@ services:
     restart: always
     depends_on:
       - postgres
+      - dbt-runner  # Ensure dbt service is running before scheduling
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
@@ -53,7 +54,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-       - ./dags/sql:/opt/airflow/dags/sql
+      - ./dags/sql:/opt/airflow/dags/sql
       - ./dags/helpers:/opt/airflow/dags/helpers
       - ./requirements.txt:/requirements.txt
       - ./credentials.json:/credentials.json
@@ -70,18 +71,29 @@ services:
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW__CORE__TEST_CONNECTION: 'Enabled'
-      
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-       - ./dags/sql:/opt/airflow/dags/sql
+      - ./dags/sql:/opt/airflow/dags/sql
       - ./dags/helpers:/opt/airflow/dags/helpers
       - ./requirements.txt:/requirements.txt
       - ./credentials.json:/credentials.json
       - ./dags/helpers/postgre_tables.yaml:/opt/airflow/dags/helpers/postgre_tables.yaml
-      
     command: bash -c "pip install -r /requirements.txt && airflow db upgrade && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
+
+  dbt-runner:
+    image: ghcr.io/dbt-labs/dbt-bigquery:latest
+    container_name: dbt-runner
+    restart: always
+    depends_on:
+      - postgres
+    volumes:
+      - ./dbt_project:/usr/app/dbt  # Mount dbt_project correctly
+      - ./credentials.json:/usr/app/dbt/credentials.json  # Ensure BigQuery credentials are accessible
+      - ./dbt_project/profiles.yml:/root/.dbt/profiles.yml  # Fix profiles.yml path
+    working_dir: /usr/app/dbt  # Set the working directory correctly
+    entrypoint: ["/bin/bash", "-c", "sleep infinity"]  # Keep dbt container running
 
 volumes:
   postgres_data:
