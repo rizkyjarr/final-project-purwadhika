@@ -31,12 +31,11 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./dags/sql:/opt/airflow/dags/sql
+       - ./dags/sql:/opt/airflow/dags/sql
       - ./dags/helpers:/opt/airflow/dags/helpers
       - ./requirements.txt:/requirements.txt
       - ./credentials.json:/credentials.json
       - ./dags/helpers/postgre_tables.yaml:/opt/airflow/dags/helpers/postgre_tables.yaml
-      - /var/run/docker.sock:/var/run/docker.sock
     command: bash -c "pip install -r /requirements.txt && airflow db upgrade && airflow webserver"
 
   airflow-scheduler:
@@ -54,12 +53,11 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./dags/sql:/opt/airflow/dags/sql
+       - ./dags/sql:/opt/airflow/dags/sql
       - ./dags/helpers:/opt/airflow/dags/helpers
       - ./requirements.txt:/requirements.txt
       - ./credentials.json:/credentials.json
       - ./dags/helpers/postgre_tables.yaml:/opt/airflow/dags/helpers/postgre_tables.yaml
-      - /var/run/docker.sock:/var/run/docker.sock
     command: bash -c "pip install -r /requirements.txt && airflow scheduler"
 
   airflow-init:
@@ -77,12 +75,11 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./dags/sql:/opt/airflow/dags/sql
+       - ./dags/sql:/opt/airflow/dags/sql
       - ./dags/helpers:/opt/airflow/dags/helpers
       - ./requirements.txt:/requirements.txt
       - ./credentials.json:/credentials.json
       - ./dags/helpers/postgre_tables.yaml:/opt/airflow/dags/helpers/postgre_tables.yaml
-      - /var/run/docker.sock:/var/run/docker.sock
       
     command: bash -c "pip install -r /requirements.txt && airflow db upgrade && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
 
