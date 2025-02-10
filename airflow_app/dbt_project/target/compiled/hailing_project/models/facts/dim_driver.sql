@@ -27,8 +27,3 @@ FROM driver
 LEFT JOIN vehicle
 on driver.driver_id = vehicle.driver_id
 
-
-    WHERE driver.created_at > (
-        SELECT MAX(created_at)
-        FROM `purwadika`.`rizky_dwh_hailing_facts`.`dim_driver`
-    )

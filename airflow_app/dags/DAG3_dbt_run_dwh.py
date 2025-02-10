@@ -8,11 +8,21 @@ default_args = {
     "retries": 1,
 }
 
-with DAG("dbt_run_staging", default_args=default_args, schedule_interval="@daily", catchup=False) as dag:
+with DAG("DAG3_dbt_run", default_args=default_args, schedule_interval="@daily", catchup=False) as dag:
 
     dbt_run_staging = BashOperator(
         task_id="dbt_run_staging_models",
-        bash_command="docker exec -i dbt-runner dbt run --project-dir /dbt --profiles-dir /dbt --select staging"
+        bash_command="docker exec -i dbt-runner dbt run --project-dir /usr/app/dbt --profiles-dir /usr/app/dbt --select staging"
     )
 
-    dbt_run_staging
+    dbt_run_facts_dim = BashOperator(
+        task_id="dbt_run_facts_models",
+        bash_command="docker exec -i dbt-runner dbt run --project-dir /usr/app/dbt --profiles-dir /usr/app/dbt --select facts"
+    )
+
+    dbt_run_marts= BashOperator(
+        task_id="dbt_run_marts_models",
+        bash_command="docker exec -i dbt-runner dbt run --project-dir /usr/app/dbt --profiles-dir /usr/app/dbt --select marts"
+    )
+
+    dbt_run_staging >> dbt_run_facts_dim >> dbt_run_marts
