@@ -43,7 +43,7 @@ def extract_incremental_data_postgre(table_name, incremental_column=None):
     
     #fetch table that has created_at column/incremental_volume
     if incremental_column:
-        target_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        target_date = (datetime.now() - timedelta(days=0)).strftime("%Y-%m-%d")
         query = f"""
 
             SELECT * FROM {table_name}
@@ -59,7 +59,7 @@ def extract_incremental_data_postgre(table_name, incremental_column=None):
 
 def check_if_table_exists(table_name):
 
-    table_ref =  f"{BQ_PROJECT}.{BQ_DATASET}.production_hailing_{table_name}_source"
+    table_ref =  f"{BQ_PROJECT}.{BQ_DATASET}.production_hailing_source_{table_name}"
     try:
         client.get_table(table_ref)
         print(f"✅ Table {table_name} has already existed in {BQ_PROJECT}.{BQ_DATASET}. Skipping table creation..")
@@ -123,7 +123,7 @@ def get_postgres_schema(table_name):
 
 def create_bigquery_table(table_name, schema, partition_field):
 
-    table_ref =  f"{BQ_PROJECT}.{BQ_DATASET}.production_hailing_{table_name}_source"
+    table_ref =  f"{BQ_PROJECT}.{BQ_DATASET}.production_hailing_source_{table_name}"
     table = bigquery.Table(table_ref,schema=schema)
 
     if partition_field:
@@ -152,7 +152,7 @@ def ensure_table_exist(table_name, partition_field):
 def upsert_to_bigquery(df, table_name, primary_key):
     """Upsert DataFrame into BigQuery using a staging table for efficiency."""
     dataset_ref = f"{BQ_PROJECT}.{BQ_DATASET}"
-    target_table = f"{dataset_ref}.production_hailing_{table_name}_source"
+    target_table = f"{dataset_ref}.production_hailing_source_{table_name}"
     staging_table = f"{dataset_ref}.staging_{table_name}"
 
     if df.empty:
@@ -160,7 +160,7 @@ def upsert_to_bigquery(df, table_name, primary_key):
         return
 
     job_config = bigquery.LoadJobConfig(
-        write_disposition="WRITE_TRUNCATE"  # ✅ Overwrite staging table each time
+        write_disposition="WRITE_TRUNCATE"  # Overwrite staging_table each time
     )
 
     job = client.load_table_from_dataframe(df, staging_table, job_config=job_config)

@@ -1,0 +1,13 @@
+hailing_project:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: purwadika
+      dataset: rizky_dwh_hailing_source
+      threads: 4
+      keyfile: /root/.dbt/credentials.json
+  
+
+  # urutan antara target dan outputs tidak
