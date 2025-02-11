@@ -1,5 +1,6 @@
 import requests
 import json
+import pytz
 
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1338491764238979132/gxkcO89HefdilVEvU0JeNmo_Mqsyg3Rg-V_S4Rs5k1yzysSA7_el9XvcNtsS_6fUXwAU"  # 🔹 Replace with your webhook URL
 
@@ -10,23 +11,27 @@ def send_discord_alert(context, alert_type="failure"):
     execution_date = context.get('execution_date')
     exception = context.get('exception')
 
+    jakarta_tz = pytz.timezone("Asia/Jakarta")
+    execution_date_jakarta = execution_date.astimezone(jakarta_tz)
+    execution_date_str = execution_date_jakarta.strftime("%Y-%m-%d %H:%M:%S")
+
     if alert_type == "failure":
-        message = f"🚨 **Airflow Task Failed! Need actions immediately** 🚨\n" \
+        message = f"🚨 **Airflow Task Failed! Need actions immediately** \n" \
                   f" **DAG**: `{dag_id}`\n" \
                   f" **Task**: `{task_id}`\n" \
-                  f" **Execution Date**: `{execution_date}`\n" \
+                  f" **Execution Date**: `{execution_date_str}`\n" \
                   f" **Error**: `{exception}`"
     elif alert_type == "retry":
-        message = f"🔄 **Airflow Task Retrying!** 🔄\n" \
+        message = f"🔄 **Airflow Task Retrying!** \n" \
                   f" **DAG**: `{dag_id}`\n" \
                   f" **Task**: `{task_id}`\n" \
-                  f" **Execution Date**: `{execution_date}`\n" \
+                  f" **Execution Date**: `{execution_date_str}`\n" \
                   f" **Retrying attempt**"
     elif alert_type == "success":
-        message = f"✅ **Airflow Task Completed!** ✅\n" \
+        message = f"✅ **Airflow Task Completed!** \n" \
                   f" **DAG**: `{dag_id}`\n" \
                   f" **Task**: `{task_id}`\n" \
-                  f" **Execution Date**: `{execution_date}`\n" \
+                  f" **Execution Date**: `{execution_date_str}`\n" \
                   f" **Success**"
 
     payload = {"content": message}
