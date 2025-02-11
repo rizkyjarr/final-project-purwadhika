@@ -25,9 +25,8 @@ default_args = {
     "start_date": datetime(2024, 2, 1),
     "retries": 5,
     "retry_delay":timedelta(seconds=10),
-    "on_failure_callback": lambda context: send_discord_alert(context, "failure"),  # ✅ Send failure alerts
-    "on_retry_callback": lambda context: send_discord_alert(context, "retry"),      # ✅ Send retry alerts
-    "on_success_callback": lambda context: send_discord_alert(context, "success"),
+    "on_failure_callback": lambda context: send_discord_alert(context, "failure"),  
+    "on_retry_callback": lambda context: send_discord_alert(context, "retry"),      
 }
 
 # Define the DAG
