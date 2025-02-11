@@ -43,7 +43,7 @@ def extract_incremental_data_postgre(table_name, incremental_column=None):
     
     #fetch table that has created_at column/incremental_volume
     if incremental_column:
-        target_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        target_date = (datetime.now() - timedelta(days=0)).strftime("%Y-%m-%d")
         query = f"""
 
             SELECT * FROM {table_name}
