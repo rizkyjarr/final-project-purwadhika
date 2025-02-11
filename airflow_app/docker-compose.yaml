@@ -20,6 +20,7 @@ services:
       - postgres
       - airflow-scheduler
       - dbt-runner  # Ensure dbt service is running before Airflow starts
+      - selenium
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
@@ -47,6 +48,7 @@ services:
     depends_on:
       - postgres
       - dbt-runner  # Ensure dbt service is running before scheduling
+      - selenium
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
@@ -100,6 +102,16 @@ services:
       - ./dbt_project/profiles.yml:/root/.dbt/profiles.yml  # Fix profiles.yml path
     working_dir: /usr/app/dbt  # Set the working directory correctly
     entrypoint: ["/bin/bash", "-c", "sleep infinity"]  # Keep dbt container running
+
+  selenium:
+    image: selenium/standalone-chrome
+    container_name: selenium
+    ports:
+      - "4444:4444"
+    environment:
+      - SE_NODE_MAX_INSTANCES=1
+      - SE_NODE_MAX_SESSION=1
+
 
 volumes:
   postgres_data:

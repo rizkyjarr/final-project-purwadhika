@@ -1,19 +1,7 @@
-
-import re
-import time
-import pytz
-import pandas as pd
 from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from google.cloud import bigquery
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from helpers.scraping_helper import fetch_and_map_rupiahcepat , upsert_to_bigquery, run_pipeline
-
+from helpers.scraping_helper import run_pipeline
 
 # === AIRFLOW DAG CONFIGURATION === #
 default_args = {
@@ -23,17 +11,20 @@ default_args = {
     "retries": 1,
 }
 
-dag = DAG(
-    "DAG4_p2p_scrape",
+# Define DAG
+with DAG(
+    "p2p_scraping_rupiahcepat",  # Updated DAG name for clarity
     default_args=default_args,
     schedule_interval="@daily",
     catchup=False
-)
+) as dag:
 
-run_task = PythonOperator(
-    task_id="rupiahcepat_stats",
-    python_callable=run_pipeline,
-    dag=dag
-)
+# Define task
+    run_task = PythonOperator(
+        task_id="scrape_and_upsert_rupiahcepat",
+        python_callable=run_pipeline,
+        provide_context=True,  # Allows Airflow to pass execution context
+        dag=dag
+    )
 
-run_task
+    run_task
