@@ -64,7 +64,7 @@ services:
       - ./requirements.txt:/requirements.txt
       - ./credentials.json:/credentials.json
       - ./dags/helpers/postgre_tables.yaml:/opt/airflow/dags/helpers/postgre_tables.yaml
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock # lets airflow communicate with dbt to perform dbt run
     command: bash -c "pip install -r /requirements.txt && airflow scheduler"
 
   airflow-init:
@@ -87,7 +87,7 @@ services:
       - ./requirements.txt:/requirements.txt
       - ./credentials.json:/credentials.json
       - ./dags/helpers/postgre_tables.yaml:/opt/airflow/dags/helpers/postgre_tables.yaml
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock # lets airflow communicate with dbt to perform dbt run
     command: bash -c "pip install -r /requirements.txt && airflow db upgrade && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
 
   dbt-runner:
@@ -97,7 +97,7 @@ services:
     depends_on:
       - postgres
     volumes:
-      - ./dbt_project:/usr/app/dbt  # Mount dbt_project correctly
+      - ./dbt_project:/usr/app/dbt  # Mount dbt_project to be able to run dbt models, macros etc
       - ./credentials.json:/usr/app/dbt/credentials.json  # Ensure BigQuery credentials are accessible
       - ./dbt_project/profiles.yml:/root/.dbt/profiles.yml  # Fix profiles.yml path
     working_dir: /usr/app/dbt  # Set the working directory correctly

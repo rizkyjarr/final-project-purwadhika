@@ -11,7 +11,7 @@ import os
 # Load environment for DB configuration
 load_dotenv()
 
-# Declare function for datetime
+# Declare function for string datetime
 local_tz = pytz.timezone('Asia/Jakarta')
 created_at = datetime.now().astimezone(local_tz)
 created_at_str = created_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -59,21 +59,24 @@ def generate_driver():
         }
         return driver  # Return list of drivers
 
+# Create function for random license plate - incorporated within vehicle function
 def generate_license_plate():
     first_letter = random.choice(string.ascii_uppercase)
     numbers = ''.join(random.choices(string.digits, k=3))  # Three digits
     last_letters = ''.join(random.choices(string.ascii_uppercase, k=3))  # Three letters
     return f"{first_letter}{numbers}{last_letters}"
 
+# Fetch the latest driver id from driver to be incorporated in vehicle table
 def fetch_latest_driver_id():
      cursor.execute("SELECT driver_id FROM driver ORDER BY driver_id DESC LIMIT 1;")
      result = cursor.fetchone()
      return result[0] if result else None
 
+# Generate vehicle data after license plate and driver_id fetched
 def generate_vehicle():        
         latest_driver_id = fetch_latest_driver_id()
 
-        if latest_driver_id is None:  # ✅ Prevent inserting when no driver exists
+        if latest_driver_id is None:  # Prevent inserting when no driver exists
             print("🚨 No driver found! Skipping vehicle generation.")
             return None
 
@@ -88,19 +91,22 @@ def generate_vehicle():
                 }
             return vehicle
 
+# Fetch cust id from customer, will be incorporated in ride_table
 def fetch_cust_id():
     cursor.execute("SELECT cust_id FROM customer")
     customer_id = [row[0] for row in cursor.fetchall()]
     return customer_id
 
+# Fetch driver id from customer, will be incorporated in ride_table
 def fetch_driver_id():
     cursor.execute("SELECT driver_id FROM driver")
     driver_id = [row[0] for row in cursor.fetchall()]
     return driver_id
 
+# Generate ride_table
 def generate_ride():
-    distance_km = round(random.uniform(1.0, 10.0), 2)  # Random distance in km
-    fare = 1 * distance_km
+    distance_km = round(random.uniform(1.0, 10.0), 2)  # Creates Random distance in km
+    fare = 1 * distance_km # Assumption 1 km = 1$ in fare.
 
     fetched_cust_id = fetch_cust_id()
     fetched_driver_id = fetch_driver_id()
@@ -129,6 +135,7 @@ def generate_ride():
         }
     return ride
 
+# Modular function that inserts data to Postgresql
 def insert_data(table_name,data):
     conn = psycopg2.connect(**DB_CONFIG)
     cursor = conn.cursor()

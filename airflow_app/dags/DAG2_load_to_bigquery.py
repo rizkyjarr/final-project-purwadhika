@@ -11,11 +11,12 @@ from helpers.send_discord_alert import send_discord_alert
 with open("/opt/airflow/dags/helpers/postgre_tables.yaml", "r") as file:
     config = yaml.safe_load(file)
 
+# Push extracted data to XCom - is a temporary storage within the airflow, takes metadata resource
 def extract_and_push_to_xcom(**kwargs):
     """Extracts data and pushes DataFrame as JSON to XCom"""
     table_name = kwargs["table_name"]
     incremental_column = kwargs["incremental_column"]
-    task_instance = kwargs['ti']  # ✅ Explicitly reference TaskInstance
+    task_instance = kwargs['ti']  # Explicitly reference TaskInstance
 
     print(f"🔄 Extracting data for {table_name} using incremental column {incremental_column}...")
 
@@ -32,11 +33,12 @@ def extract_and_push_to_xcom(**kwargs):
     df_json = df.to_json()
     xcom_key = f"{table_name}_data"
 
-    # ✅ Push to XCom with task context
+    # Push to XCom with task context
     task_instance.xcom_push(key=xcom_key, value=df_json)
 
     print(f"✅ Extracted {len(df)} rows for {table_name} and stored in XCom with key '{xcom_key}'.")
 
+# Pull data from XCOM for upsert
 def pull_from_xcom_and_upsert(**kwargs):
     """Retrieves JSON from XCom, converts back to DataFrame, and upserts"""
     table_name = kwargs["table_name"]
@@ -45,20 +47,20 @@ def pull_from_xcom_and_upsert(**kwargs):
 
     print(f"🔄 Pulling data from XCom for table: {table_name}...")
 
-    # ✅ Correct task_id formatting (especially inside TaskGroups)
+    # Correct task_id formatting (especially inside TaskGroups)
     task_id = f"{table_name}_data.extract_incremental_{table_name}"  
     xcom_key = f"{table_name}_data"
 
     print(f"🔍 Looking for XCom key: {xcom_key} from task: {task_id}")
 
-    # ✅ Ensure correct task_id when pulling from XCom
+    # Ensure correct task_id when pulling from XCom
     df_json = task_instance.xcom_pull(task_ids=task_id, key=xcom_key)
 
     if not df_json:
         print(f"❌ ERROR: No XCom data found for key '{xcom_key}'. Check task {task_id}.")
         return
 
-    # ✅ Debug: Print JSON Data
+    # Debug: Print JSON Data
     print(f"✅ Retrieved JSON from XCom: {df_json[:500]}...")  # Print only first 500 chars
 
     df = pd.read_json(df_json)

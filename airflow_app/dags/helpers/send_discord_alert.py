@@ -2,6 +2,7 @@ import requests
 import json
 import pytz
 
+
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1338491764238979132/gxkcO89HefdilVEvU0JeNmo_Mqsyg3Rg-V_S4Rs5k1yzysSA7_el9XvcNtsS_6fUXwAU"  # 🔹 Replace with your webhook URL
 
 def send_discord_alert(context, alert_type="failure"):

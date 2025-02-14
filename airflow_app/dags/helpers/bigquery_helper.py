@@ -30,14 +30,10 @@ BQ_PROJECT = os.getenv("BQ_PROJECT")
 BQ_DATASET = os.getenv("BQ_DATASET")
 
 # Open .yaml file for tables configuration
-
-# with open("postgre_tables.yaml", "r") as file:
-#     config = yaml.safe_load(file)
-
 with open("/opt/airflow/dags/helpers/postgre_tables.yaml", "r") as file:
     config = yaml.safe_load(file)
 
-# extract incremental data from tables in postgre that has been configurated in tables.yaml
+# Extract incremental data from tables in postgre that has been configurated in tables.yaml
 def extract_incremental_data_postgre(table_name, incremental_column=None):
     conn = psycopg2.connect(**DB_CONFIG)
     
@@ -51,12 +47,13 @@ def extract_incremental_data_postgre(table_name, incremental_column=None):
 
             """
     else:
-        query = f"SELECT * FROM {table_name}" #fetch table that does not have incremental_volume
+        query = f"SELECT * FROM {table_name}" #fetch table that does not have incremental_volume. With this, table that has no incremental volume can also be ingested
 
     df = pd.read_sql(query,conn)
     conn.close()
     return df
 
+# This function checks if table exists in BigQuery. If it does not exist, it will attempt to create one.
 def check_if_table_exists(table_name):
 
     table_ref =  f"{BQ_PROJECT}.{BQ_DATASET}.production_hailing_source_{table_name}"
@@ -67,9 +64,9 @@ def check_if_table_exists(table_name):
     except Exception as e:
         print(f"⚠️ Table {table_name} does not exist in {BQ_PROJECT}.{BQ_DATASET}. Attempt to create table..")
         return False
-    
+
+# Mapping schema fetched from postgre table to align with BQ Schema    
 def mapping_postgres_schema_to_bq(pg_type):
-    """MAP POSTGRESQL DATA TYPES TO ALIGN WITH BQ SCHEMA"""
     type_mapping = {
         "integer": "INTEGER",
         "bigint": "INTEGER",
@@ -102,8 +99,9 @@ def mapping_postgres_schema_to_bq(pg_type):
     
     return type_mapping.get(pg_type.lower(), "STRING")
 
+
+# Fetch schema from tables that are to be ingested to BQ, it will later be mapped to align with BQ schema.
 def get_postgres_schema(table_name):
-    
     query = f"""
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -121,6 +119,7 @@ def get_postgres_schema(table_name):
 
     return schema
 
+# Create BigQuery table, it will check if the table has partition field (which is set postgre_tables.yaml). If it doesnt have partition, it will be skipped.
 def create_bigquery_table(table_name, schema, partition_field):
 
     table_ref =  f"{BQ_PROJECT}.{BQ_DATASET}.production_hailing_source_{table_name}"
@@ -136,6 +135,7 @@ def create_bigquery_table(table_name, schema, partition_field):
     table = client.create_table(table)
     print(f"✅ Table {table_ref} successfully created in BigQuery")
 
+# Combination of checking table, get postgres, and create table functions.
 def ensure_table_exist(table_name, partition_field):
     """Logical flow: 
     1. if table exists --> skip table creation
@@ -148,9 +148,16 @@ def ensure_table_exist(table_name, partition_field):
     
     schema = get_postgres_schema(table_name)
     create_bigquery_table(table_name, schema,partition_field)
-    
+
+
+# Upsert the fetched data from postgresql to BigQuery using MERGE.
 def upsert_to_bigquery(df, table_name, primary_key):
-    """Upsert DataFrame into BigQuery using a staging table for efficiency."""
+    """Logical flow:
+    1. check if df empty, skip the function if it H-1 data is not available or df empty
+    2. if df is not empty, it will attempt to create a temporary staging table that's overwritten each time
+    3. merge the temporary staging table with destination table, it also perform cast to handle data types differences
+    4. drop/delete the temporary staging table
+    """
     dataset_ref = f"{BQ_PROJECT}.{BQ_DATASET}"
     target_table = f"{dataset_ref}.production_hailing_source_{table_name}"
     staging_table = f"{dataset_ref}.staging_{table_name}"
@@ -164,13 +171,13 @@ def upsert_to_bigquery(df, table_name, primary_key):
     )
 
     job = client.load_table_from_dataframe(df, staging_table, job_config=job_config)
-    job.result()  # ✅ Wait for the job to complete
+    job.result()  # Wait for the job to complete
     print(f"✅ Loaded {len(df)} rows into staging table: {staging_table}")
 
-    # ✅ Define columns that need explicit CAST
-    float_to_numeric_columns = {"distance_km", "fare"}  # ✅ Add other affected NUMERIC columns
-    datetime_to_timestamp_columns = {"start_time", "end_time", "created_at", "updated_at"}  # ✅ Add TIMESTAMP columns
-    string_columns = {"year"}  # ✅ Columns that must be STRING
+    # Define columns that need explicit CAST, because df datatype is not align with BigQuery.
+    float_to_numeric_columns = {"distance_km", "fare"} 
+    datetime_to_timestamp_columns = {"start_time", "end_time", "created_at", "updated_at"} 
+    string_columns = {"year"}  
 
     merge_query = f"""
     MERGE `{target_table}` AS target
@@ -197,10 +204,10 @@ def upsert_to_bigquery(df, table_name, primary_key):
     """
 
     query_job = client.query(merge_query)
-    query_job.result()  # ✅ Wait for the MERGE to complete
+    query_job.result()  # Wait for the MERGE to complete
     print(f"✅ Merged {len(df)} rows into {target_table}")
 
-    # Step 3️⃣: Drop Staging Table to Clean Up
+    # Drop Staging Table to Clean Up
     drop_query = f"DROP TABLE `{staging_table}`"
     client.query(drop_query).result()
     print(f"🗑️ Dropped staging table: {staging_table}")

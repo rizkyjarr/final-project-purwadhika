@@ -23,7 +23,7 @@ load_dotenv()
 credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 client = bigquery.Client.from_service_account_json(credentials_path)
 
-# === FUNCTION 1: CHECK AND CREATE TABLE IF NOT EXISTS === #
+# Check if destination table exists or not
 def ensure_table_exists():
     """Ensures the BigQuery table exists. If not, creates it with the correct schema."""
     PROJECT_ID = "purwadika"
@@ -59,7 +59,7 @@ def ensure_table_exists():
         client.create_table(table)
         logger.info(f"✅ Table {table_ref} created successfully.")
 
-# === FUNCTION 2: FETCH & MAP DATA === #
+# Fetch and map the data to columns name
 def fetch_and_map_rupiahcepat():
     """Scrapes statistics from Rupiah Cepat and maps them to a Pandas DataFrame."""
     url = "https://www.rupiahcepat.co.id/about/index.html"
@@ -73,7 +73,7 @@ def fetch_and_map_rupiahcepat():
 
     driver = None
     try:
-        # Connect to Selenium container
+        # Connect to Selenium container, this lets the airflow commands the selenium to scrape the data through server remote in port 4444
         driver = webdriver.Remote(
             command_executor="http://selenium:4444/wd/hub",  
             options=chrome_options
@@ -85,7 +85,7 @@ def fetch_and_map_rupiahcepat():
         time.sleep(5)
         logger.info(f"Page title: {driver.title}")
 
-        # Extract data
+        # Extract data, spesific in particular <div
         div = driver.find_element(By.XPATH, "(//div[@data-v-35084c97])[1]")
         h3_elements = div.find_elements(By.TAG_NAME, "h3")
         extracted_numbers = []
@@ -94,6 +94,7 @@ def fetch_and_map_rupiahcepat():
             text = h3.text.strip()
             numbers = re.findall(r"(\d+[\.,]?\d*)\s*(jt|ribu|M|T)?", text)
 
+            # handle transformation data (eg: convert jt to *1.000.000, etc)
             converted_numbers = []
             for num, unit in numbers:
                 num = float(num.replace(",", "."))
@@ -109,7 +110,8 @@ def fetch_and_map_rupiahcepat():
 
             if converted_numbers:
                 extracted_numbers.extend(converted_numbers)
-
+        
+        # map column headers name
         column_headers = [
             "fund_recipients_since_est_no",
             "fund_recipients_current_year",
@@ -126,15 +128,15 @@ def fetch_and_map_rupiahcepat():
             df = pd.DataFrame([extracted_numbers], columns=column_headers)
         else:
             logger.warning("⚠️ Extracted values do not match expected number of columns!")
-            df = pd.DataFrame([extracted_numbers])
+            df = pd.DataFrame([extracted_numbers]) # this will check whether number of fetched data aligns with number of columns. 
 
         jakarta_tz = pytz.timezone("Asia/Jakarta")
         current_time = datetime.now(pytz.utc).astimezone(jakarta_tz).strftime('%Y-%m-%d %H:%M:%S')
 
-        df.insert(0, "organization_name", "RupiahCepat")
-        df["created_at"] = current_time
-        df["updated_at"] = current_time
-        df["is_active"] = True
+        df.insert(0, "organization_name", "RupiahCepat") # add organization name in column index 0
+        df["created_at"] = current_time # add created_at column
+        df["updated_at"] = current_time # updated_at column
+        df["is_active"] = True # add description whether data is active or inactive for possible future changes
 
         return df
 
@@ -145,7 +147,7 @@ def fetch_and_map_rupiahcepat():
         if driver:
             driver.quit()
 
-# === FUNCTION 3: UPSERT TO BIGQUERY (SCD2) === #
+# Upsert to BigQuery using Slowing Changing Dimension Type 2
 def upsert_to_bigquery():
     """Performs SCD Type 2 upsert in BigQuery: Ensures table exists, marks old records inactive & inserts new ones, then drops the staging table."""
     PROJECT_ID = "purwadika"
@@ -159,7 +161,7 @@ def upsert_to_bigquery():
         # Ensure table exists before upserting
         ensure_table_exists()
 
-        # Get new data
+        # Scraping the data from website
         df = fetch_and_map_rupiahcepat()
         logger.info("DataFrame to be inserted:")
         logger.info(df)
@@ -176,7 +178,7 @@ def upsert_to_bigquery():
         datetime_to_timestamp_columns = {"created_at", "updated_at"}  # TIMESTAMP fields
         
 
-        # **Perform the MERGE operation for upsert**
+        # Perform the MERGE operation for upsert
         merge_query = f"""
         MERGE `{table_ref}` AS target
         USING `{staging_table_ref}` AS source
@@ -205,7 +207,7 @@ def upsert_to_bigquery():
 
         logger.info(f"✅ Upsert completed successfully in {table_ref}")
 
-        # **Drop the staging table after upsert**
+        # Drop the staging table after upsert
         drop_query = f"DROP TABLE `{staging_table_ref}`"
         drop_job = client.query(drop_query)
         drop_job.result()  # Wait for drop query to complete
@@ -216,8 +218,8 @@ def upsert_to_bigquery():
         raise
 
 
-# === FUNCTION 4: DAG EXECUTION FUNCTION === #
+# Function for DAG4 - this streamlines all function within this helper file
 def run_pipeline():
     """Executes the entire pipeline: Ensuring table, scraping data, and upserting to BigQuery."""
     upsert_to_bigquery()
-    logger.info("🚀 Data scraping and upsert complete!")
+    logger.info(" Data scraping and upsert complete!")

@@ -19,17 +19,20 @@ with DAG(
     max_active_runs=1
     
     ) as dag:
-
+    
+    # Perform dbt run to transform and move source data to preparation layer
     dbt_run_staging = BashOperator(
         task_id="dbt_run_staging_models",
         bash_command="docker exec -i dbt-runner dbt run --project-dir /usr/app/dbt --profiles-dir /usr/app/dbt --select staging"
     )
-
+    
+    # Perform dbt run to transform and move preparation layer to facts and dim layer
     dbt_run_facts_dim = BashOperator(
         task_id="dbt_run_facts_models",
         bash_command="docker exec -i dbt-runner dbt run --project-dir /usr/app/dbt --profiles-dir /usr/app/dbt --select facts"
     )
 
+    # Perform dbt run to transform and move preparation facts and dim layer to data marts layer
     dbt_run_marts= BashOperator(
         task_id="dbt_run_marts_models",
         bash_command="docker exec -i dbt-runner dbt run --project-dir /usr/app/dbt --profiles-dir /usr/app/dbt --select marts"

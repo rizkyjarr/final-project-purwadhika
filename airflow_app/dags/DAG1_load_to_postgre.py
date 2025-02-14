@@ -9,7 +9,7 @@ from airflow.decorators import task
 from helpers.send_discord_alert import send_discord_alert
 
 
-# ✅ The correct path inside the Airflow container
+# The correct path inside the Airflow container
 SQL_FOLDER = "/opt/airflow/dags/sql"
 
 # Ensure the directory exists before listing files
@@ -72,18 +72,3 @@ with DAG(
             prev_task_group >> table_group 
 
         prev_task_group = table_group
-
-        
-
-            # **Step 2: Generate & Insert Data**
-            
-
-            #     # Set the dependency within the TaskGroup
-            #     create_table_task >> insert_task
-
-                # # Set the dependency between TaskGroups (if there's a previous task)
-                # if previous_task:
-                #     previous_task >> create_table_task
-
-                # # Update the previous_task to the last task in the current TaskGroup
-                # previous_task = insert_task

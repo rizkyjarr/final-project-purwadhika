@@ -8,10 +8,7 @@ import yaml
 # Load environment for DB configuration
 load_dotenv()
 
-
-# SECTION 1 --  LOAD DATA TO POSTGRE
-
-# DB connection configuration
+# DB connection configuration -- way much better than hardcode the credentials within python script
 DB_CONFIG = {
     "dbname": os.getenv("DB_NAME"),
     "user": os.getenv("DB_USER"),
@@ -20,7 +17,7 @@ DB_CONFIG = {
     "port": os.getenv("DB_PORT")
 }
 
-# Check whether specific table exist in the DB
+# Check whether specific table exist in the DB based on table_name set in postgre_tables.yml
 def table_exists(table_name):
     query = f"""
     SELECT EXISTS (
@@ -40,7 +37,7 @@ def table_exists(table_name):
         print("Error checking table existence: {e}")
         return False
 
-# Execute SQL file
+# Execute SQL file from SQL folder
 def execute_sql_file(sql_file_path, table_name):
     """Executes an SQL file if the table does not exist."""
     if table_exists(table_name):
