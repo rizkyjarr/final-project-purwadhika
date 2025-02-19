@@ -107,7 +107,7 @@ def get_postgres_schema(table_name):
         FROM information_schema.columns
         WHERE table_name = '{table_name}'
         ORDER BY ordinal_position;
-    """
+    """ # Ordinal position makes sure the order of column exactly the same in postgre
     cursor.execute(query)
     columns = cursor.fetchall()
 

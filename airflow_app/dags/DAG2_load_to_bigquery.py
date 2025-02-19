@@ -43,7 +43,7 @@ def pull_from_xcom_and_upsert(**kwargs):
     """Retrieves JSON from XCom, converts back to DataFrame, and upserts"""
     table_name = kwargs["table_name"]
     primary_key = kwargs["primary_key"]
-    task_instance = kwargs['ti']  # ✅ Explicit TaskInstance
+    task_instance = kwargs['ti']  # Explicit TaskInstance
 
     print(f"🔄 Pulling data from XCom for table: {table_name}...")
 
