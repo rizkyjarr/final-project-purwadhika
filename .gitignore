@@ -9,4 +9,5 @@ finalproject_rizkyfajaraditya.pptx
 airflow_app/credentials.json
 finalproject_rizkyfajaraditya_documentation.pptx
 finalproject_rizkyfajaraditya.pdf
-
+airflow_app/dbt_project/logs
+airflow_app/dbt_project/target
